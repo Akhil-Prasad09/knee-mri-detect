@@ -3,7 +3,7 @@ import numpy as np
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from ..core.db import SessionLocal, Exam
-from ..core.config import STORAGE_DIR, PLANES, LABELS, THRESHOLD
+from ..core.config import STORAGE_DIR, PLANES, LABELS, THRESHOLDS
 from ..services.inference import predict, get_model
 from ..services.report import build_report
 
@@ -35,7 +35,7 @@ def run_inference(exam_id: int):
             import cv2
             plane, x = next(iter(tensors.items()))
             for i, label in enumerate(LABELS):
-                if preds[label] >= THRESHOLD:
+                if preds[label] >= THRESHOLDS[label]:
                     _, overlay = gradcam_overlay(get_model(plane), x, i)
                     out = d / f"gradcam_{label}.png"; cv2.imwrite(str(out), cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR)); cams[label] = str(out)
         except Exception as e:  # explainability is best-effort
@@ -53,7 +53,8 @@ def get_exam(exam_id: int):
     if not exam:
         raise HTTPException(404)
     return {"id": exam.id, "status": exam.status, "predictions": exam.predictions,
-            "gradcam": {k: f"/api/v1/exams/{exam.id}/gradcam/{k}" for k in exam.gradcam}, "created_at": exam.created_at}
+            "gradcam": {k: f"/api/v1/exams/{exam.id}/gradcam/{k}" for k in exam.gradcam},
+            "thresholds": THRESHOLDS, "created_at": exam.created_at}
 
 
 @router.get("/{exam_id}/gradcam/{label}")

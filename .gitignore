@@ -16,3 +16,4 @@ storage/
 node_modules/
 frontend/dist/
 .DS_Store
+ml/models/eval.json

@@ -20,5 +20,5 @@ def test_upload_to_report(tmp_path, monkeypatch):
             time.sleep(1)
         assert j["status"] == "done", j
         assert set(j["predictions"]) == set(cfg.LABELS)
-        assert set(j["gradcam"]) == {k for k, v in j["predictions"].items() if v >= cfg.THRESHOLD}
+        assert set(j["gradcam"]) == {k for k, v in j["predictions"].items() if v >= cfg.THRESHOLDS[k]}
         assert c.get(f"/api/v1/exams/{eid}/report").headers["content-type"] == "application/pdf"

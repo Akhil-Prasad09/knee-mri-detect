@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import yaml
 _cfg = yaml.safe_load(open(os.getenv("TRAIN_CONFIG", "ml/training/config.yaml")))
 LABELS = _cfg["labels"]
@@ -7,4 +8,9 @@ PLANES = ["sagittal", "coronal", "axial"]
 MODEL_DIR = os.getenv("MODEL_DIR", "ml/models")
 STORAGE_DIR = os.getenv("STORAGE_DIR", "storage")
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./knee.db")
-THRESHOLD = 0.5
+import json
+_ev = Path(MODEL_DIR) / "eval.json"
+_src = json.load(open(_ev)).get("ensemble") if _ev.exists() else None
+if _src is None and _ev.exists():
+    _src = next(iter(json.load(open(_ev)).values()))
+THRESHOLDS = {l: (_src[l]["threshold"] if _src else 0.5) for l in LABELS}  # tuned in ml/training/evaluate.py

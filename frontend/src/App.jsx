@@ -40,7 +40,7 @@ export default function App() {
             <>
               <table border="1" cellPadding="6"><tbody>
                 {Object.entries(exam.predictions).map(([k, v]) => (
-                  <tr key={k}><td>{k}</td><td>{(v * 100).toFixed(1)}%</td><td style={{ color: v >= 0.5 ? 'crimson' : 'green' }}>{v >= 0.5 ? 'POSITIVE' : 'negative'}</td></tr>
+                  <tr key={k}><td>{k}</td><td>{(v * 100).toFixed(1)}%</td><td style={{ color: v >= exam.thresholds[k] ? 'crimson' : 'green' }}>{v >= exam.thresholds[k] ? 'POSITIVE' : 'negative'}</td></tr>
                 ))}
               </tbody></table>
               {Object.entries(exam.gradcam).map(([k, url]) => <figure key={k}><img src={url} alt={k} width="256" /><figcaption>Grad-CAM: {k}</figcaption></figure>)}
