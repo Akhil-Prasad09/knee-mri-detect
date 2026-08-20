@@ -7,5 +7,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.11' }
-      - run: pip install -r requirements.txt
-      - run: pytest -q
+      - run: pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+      - run: python scripts/make_fake_mrnet.py data/raw/MRNet-v1.0 8 4
+      - run: python -m ml.training.train --config ml/training/smoke.yaml --plane sagittal
+      - run: TRAIN_CONFIG=ml/training/smoke.yaml pytest -q

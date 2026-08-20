@@ -15,7 +15,7 @@ def run_epoch(model, loader, crit, opt, device, train):
             logits = model(x); loss = crit(logits, y)
             if train:
                 opt.zero_grad(); loss.backward(); opt.step()
-            losses.append(loss.item()); ys.append(y.cpu().numpy()); ps.append(torch.sigmoid(logits).cpu().numpy())
+            losses.append(loss.item()); ys.append(y.cpu().numpy()); ps.append(torch.sigmoid(logits).detach().cpu().numpy())
     ys, ps = np.array(ys), np.array(ps)
     aucs = [roc_auc_score(ys[:, i], ps[:, i]) for i in range(ys.shape[1])]
     return float(np.mean(losses)), aucs
@@ -26,7 +26,7 @@ def main(cfg, plane):
     tr = MRNetDataset(cfg["data_dir"], "train", plane, cfg["labels"], cfg["img_size"], train=True)
     va = MRNetDataset(cfg["data_dir"], "valid", plane, cfg["labels"], cfg["img_size"])
     pos = torch.tensor([(tr.df[l] == 0).sum() / max((tr.df[l] == 1).sum(), 1) for l in cfg["labels"]], dtype=torch.float32)
-    model = KneeMRINet(len(cfg["labels"]), cfg["backbone"]).to(device)
+    model = KneeMRINet(len(cfg["labels"]), cfg["backbone"], cfg.get("pretrained", True)).to(device)
     crit = torch.nn.BCEWithLogitsLoss(pos_weight=pos.to(device))
     opt = torch.optim.Adam(model.parameters(), lr=cfg["lr"], weight_decay=1e-4)
     dl = lambda ds, sh: DataLoader(ds, batch_size=1, shuffle=sh, num_workers=cfg["num_workers"])

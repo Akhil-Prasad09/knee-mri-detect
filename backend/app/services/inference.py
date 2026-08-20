@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np, torch
 from ml.training.model import KneeMRINet
 from ml.data.transforms import preprocess_stack
-from ..core.config import LABELS, PLANES, MODEL_DIR
+from ..core.config import LABELS, PLANES, MODEL_DIR, BACKBONE
 
 _models: dict[str, KneeMRINet] = {}
 
@@ -13,7 +13,7 @@ def get_model(plane: str) -> KneeMRINet | None:
         w = Path(MODEL_DIR) / f"{plane}.pt"
         if not w.exists():
             return None
-        m = KneeMRINet(len(LABELS), pretrained=False); m.load_state_dict(torch.load(w, map_location="cpu")); m.eval()
+        m = KneeMRINet(len(LABELS), BACKBONE, pretrained=False); m.load_state_dict(torch.load(w, map_location="cpu")); m.eval()
         _models[plane] = m
     return _models[plane]
 

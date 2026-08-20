@@ -14,7 +14,7 @@ def gradcam_overlay(model, x: torch.Tensor, label_idx: int) -> tuple[int, np.nda
     target_layer = model.backbone.conv_head
     cam = GradCAM(model=_SliceWrapper(model, label_idx), target_layers=[target_layer])
     heat = cam(input_tensor=x[s:s + 1])[0]
-    base = x[s, 0].cpu().numpy(); base = (base - base.min()) / (base.ptp() + 1e-6)
+    base = x[s, 0].cpu().numpy(); base = (base - base.min()) / (np.ptp(base) + 1e-6)
     return s, show_cam_on_image(np.repeat(base[..., None], 3, -1).astype(np.float32), heat, use_rgb=True)
 
 
