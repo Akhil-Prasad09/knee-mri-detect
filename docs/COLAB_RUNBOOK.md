@@ -18,8 +18,9 @@ Written 2026-08-20 for the next session. Read HANDOFF.md first for repo state.
 ## Preconditions (user)
 1. Logged into Google in Chrome.
 2. Kaggle account with API token created (kaggle.com → Settings → API → Create New Token).
-3. In Colab, Secrets panel: `KAGGLE_USERNAME`, `KAGGLE_KEY`, notebook access ON. (User does this; Claude
-   may open the Secrets panel and point at it but must not enter the values.)
+3. In Colab, Secrets panel: `KAGGLE_API_TOKEN` (the `KGAT_...` value), notebook access ON. Legacy alternative:
+   `KAGGLE_USERNAME` + `KAGGLE_KEY`. **The user enters this. Claude never types, pastes, or reads back a token** —
+   if the user offers one in chat, decline and ask them to put it in Secrets themselves (and rotate it).
 
 ## Steps
 
@@ -27,7 +28,8 @@ Written 2026-08-20 for the next session. Read HANDOFF.md first for repo state.
 1. `mcp__claude-in-chrome__tabs_context_mcp`, create a tab, navigate to
    `https://colab.research.google.com/github/Akhil-Prasad09/knee-mri-detect/blob/main/notebooks/train_colab.ipynb`
 2. Runtime → Change runtime type → T4 GPU → Save. Verify with screenshot.
-3. Confirm secrets exist: open 🔑 Secrets panel, check both names listed with toggle on. If missing → stop, ask user.
+3. Confirm secrets exist: open 🔑 Secrets panel, check the name(s) listed with toggle on (values stay hidden — do not
+   reveal them). If missing → stop, ask user.
 4. Run cell 1 (clone + pip + `nvidia-smi -L`). Expect a Tesla T4 line. pip takes ~2 min.
 5. Run cell 2 (Drive mount). A Google OAuth popup appears → **user clicks through**. Expect `Mounted at /content/drive`.
 6. Run cell 3 (Kaggle download, ~3–5 min at Colab bandwidth). Expect `1130`.
