@@ -22,7 +22,8 @@ Plan: PLAN.md · Product context: PRODUCT.md · Stack: PyTorch + EfficientNet, G
 - Local SQLite `knee.db` is disposable; schema changes = delete it (no migrations).
 
 ## Next
-1. Request MRNet dataset access (blocking for real training). Then train all three planes with config.yaml and run evaluate.py.
+1. **Train on Colab — follow docs/COLAB_RUNBOOK.md step by step** (notebook: notebooks/train_colab.ipynb). MRNet is already
+   downloaded locally (Kaggle mirror cjinny/mrnet-v1) for local evaluate/tests; local training was abandoned (16 GB laptop swaps).
 2. `docker compose up --build` end-to-end once on a machine with disk for the torch image.
 3. DICOM ingestion (pydicom) if non-MRNet data arrives.
 4. Optional: Impeccable v4.1.1 is available (`npx impeccable update`).
