@@ -1,7 +1,8 @@
 from pathlib import Path
 import numpy as np
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
+import cv2
 from ..core.db import SessionLocal, Exam
 from ..core.config import STORAGE_DIR, PLANES, LABELS, THRESHOLDS
 from ..services.inference import predict, get_model
@@ -47,14 +48,40 @@ def run_inference(exam_id: int):
     db.commit()
 
 
+def _planes(exam_id: int) -> dict[str, int]:
+    """{plane: n_slices} for uploaded stacks; mmap so listing stays cheap."""
+    d = Path(STORAGE_DIR) / str(exam_id)
+    return {p: np.load(d / f"{p}.npy", mmap_mode="r").shape[0] for p in PLANES if (d / f"{p}.npy").exists()}
+
+
+@router.get("")
+def list_exams(limit: int = 50):
+    rows = SessionLocal().query(Exam).order_by(Exam.id.desc()).limit(limit).all()
+    return [{"id": e.id, "patient_ref": e.patient_ref, "status": e.status, "created_at": e.created_at,
+             "predictions": e.predictions, "planes": list(_planes(e.id))} for e in rows]
+
+
 @router.get("/{exam_id}")
 def get_exam(exam_id: int):
     exam = SessionLocal().get(Exam, exam_id)
     if not exam:
         raise HTTPException(404)
-    return {"id": exam.id, "status": exam.status, "predictions": exam.predictions,
+    return {"id": exam.id, "status": exam.status, "predictions": exam.predictions, "patient_ref": exam.patient_ref,
             "gradcam": {k: f"/api/v1/exams/{exam.id}/gradcam/{k}" for k in exam.gradcam},
-            "thresholds": THRESHOLDS, "created_at": exam.created_at}
+            "thresholds": THRESHOLDS, "created_at": exam.created_at, "planes": _planes(exam.id)}
+
+
+@router.get("/{exam_id}/slice/{plane}/{i}")
+def get_slice(exam_id: int, plane: str, i: int):
+    f = Path(STORAGE_DIR) / str(exam_id) / f"{plane}.npy"
+    if plane not in PLANES or not f.exists():
+        raise HTTPException(404)
+    stack = np.load(f, mmap_mode="r")
+    if not 0 <= i < stack.shape[0]:
+        raise HTTPException(404)
+    img = cv2.normalize(np.asarray(stack[i], dtype=np.float32), None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    return Response(cv2.imencode(".png", img)[1].tobytes(), media_type="image/png",
+                    headers={"Cache-Control": "public, max-age=31536000, immutable"})
 
 
 @router.get("/{exam_id}/gradcam/{label}")
