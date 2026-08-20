@@ -16,6 +16,7 @@ class Exam(Base):
     status = Column(String, default="pending")      # pending | done | error
     predictions = Column(JSON, default=dict)          # {label: prob}
     gradcam = Column(JSON, default=dict)              # {label: png path}
+    gradcam_meta = Column(JSON, default=dict)         # {"plane": str, "slices": {label: idx}}
     report_path = Column(String, default="")
 
 

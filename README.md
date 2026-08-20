@@ -32,3 +32,10 @@ python -m ml.training.train --config ml/training/smoke.yaml --plane sagittal   #
 TRAIN_CONFIG=ml/training/smoke.yaml make api           # then upload any .npy stack at /docs
 ```
 Swap back to `ml/training/config.yaml` (EfficientNet-B3, pretrained) once MRNet is in `data/raw/`.
+
+## Docker
+
+```bash
+TRAIN_CONFIG=ml/training/smoke.yaml docker compose up --build   # web :5173 → api :8000 → postgres
+```
+Weights are read from `./ml/models` (mounted at `/models`); train first or copy `*.pt` there.

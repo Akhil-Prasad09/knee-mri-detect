@@ -22,7 +22,8 @@ def test_upload_to_report(tmp_path, monkeypatch):
         assert set(j["predictions"]) == set(cfg.LABELS)
         assert set(j["gradcam"]) == {k for k, v in j["predictions"].items() if v >= cfg.THRESHOLDS[k]}
         assert c.get(f"/api/v1/exams/{eid}/report").headers["content-type"] == "application/pdf"
-        lst = c.get("/api/v1/exams").json(); assert lst[0]["id"] == eid and lst[0]["planes"] == ["sagittal"] and "patient_ref" in lst[0]
+        lst = c.get("/api/v1/exams").json(); assert lst[0]["id"] == eid and lst[0]["planes"] == ["sagittal"] and lst[0]["flagged"] == len(j["gradcam"])
         assert j["planes"] == {"sagittal": 6}
+        if j["gradcam"]: assert j["gradcam_meta"]["plane"] == "sagittal" and set(j["gradcam_meta"]["slices"]) == set(j["gradcam"])
         assert c.get(f"/api/v1/exams/{eid}/slice/sagittal/3").headers["content-type"] == "image/png"
         assert c.get(f"/api/v1/exams/{eid}/slice/coronal/0").status_code == 404

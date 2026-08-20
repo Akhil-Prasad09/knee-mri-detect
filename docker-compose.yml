@@ -11,6 +11,7 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg2://knee:knee@db/knee
       MODEL_DIR: /models
+      TRAIN_CONFIG: ${TRAIN_CONFIG:-ml/training/config.yaml}
     volumes: ["./ml/models:/models", "./storage:/app/storage"]
     ports: ["8000:8000"]
     depends_on: [db]

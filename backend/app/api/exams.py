@@ -30,19 +30,20 @@ def run_inference(exam_id: int):
     try:
         stacks = {p: np.load(d / f"{p}.npy") for p in PLANES if (d / f"{p}.npy").exists()}
         preds, tensors = predict(stacks)
-        cams = {}
+        cams, meta = {}, {}
         try:
             from ml.explain.gradcam import gradcam_overlay
             import cv2
             plane, x = next(iter(tensors.items()))
             for i, label in enumerate(LABELS):
                 if preds[label] >= THRESHOLDS[label]:
-                    _, overlay = gradcam_overlay(get_model(plane), x, i)
+                    s, overlay = gradcam_overlay(get_model(plane), x, i)
                     out = d / f"gradcam_{label}.png"; cv2.imwrite(str(out), cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR)); cams[label] = str(out)
+                    meta = {"plane": plane, "slices": {**meta.get("slices", {}), label: s}}
         except Exception as e:  # explainability is best-effort
             print("gradcam failed:", e)
         rp = d / "report.pdf"; build_report(str(rp), exam_id, exam.patient_ref, preds, cams)
-        exam.predictions, exam.gradcam, exam.report_path, exam.status = preds, cams, str(rp), "done"
+        exam.predictions, exam.gradcam, exam.gradcam_meta, exam.report_path, exam.status = preds, cams, meta, str(rp), "done"
     except Exception as e:
         exam.status = "error"; exam.predictions = {"error": str(e)}
     db.commit()
@@ -57,8 +58,8 @@ def _planes(exam_id: int) -> dict[str, int]:
 @router.get("")
 def list_exams(limit: int = 50):
     rows = SessionLocal().query(Exam).order_by(Exam.id.desc()).limit(limit).all()
-    return [{"id": e.id, "patient_ref": e.patient_ref, "status": e.status, "created_at": e.created_at,
-             "predictions": e.predictions, "planes": list(_planes(e.id))} for e in rows]
+    return [{"id": e.id, "patient_ref": e.patient_ref, "status": e.status, "created_at": e.created_at, "planes": list(_planes(e.id)),
+             "flagged": sum(v >= THRESHOLDS[k] for k, v in e.predictions.items() if k in THRESHOLDS) if e.status == "done" else None} for e in rows]
 
 
 @router.get("/{exam_id}")
@@ -67,7 +68,7 @@ def get_exam(exam_id: int):
     if not exam:
         raise HTTPException(404)
     return {"id": exam.id, "status": exam.status, "predictions": exam.predictions, "patient_ref": exam.patient_ref,
-            "gradcam": {k: f"/api/v1/exams/{exam.id}/gradcam/{k}" for k in exam.gradcam},
+            "gradcam": {k: f"/api/v1/exams/{exam.id}/gradcam/{k}" for k in exam.gradcam}, "gradcam_meta": exam.gradcam_meta,
             "thresholds": THRESHOLDS, "created_at": exam.created_at, "planes": _planes(exam.id)}
 
 
