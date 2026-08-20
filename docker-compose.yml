@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: knee
+      POSTGRES_PASSWORD: knee
+      POSTGRES_DB: knee
+    volumes: [pgdata:/var/lib/postgresql/data]
+  api:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    environment:
+      DATABASE_URL: postgresql+psycopg2://knee:knee@db/knee
+      MODEL_DIR: /models
+    volumes: ["./ml/models:/models", "./storage:/app/storage"]
+    ports: ["8000:8000"]
+    depends_on: [db]
+  web:
+    build: ./frontend
+    ports: ["5173:80"]
+    depends_on: [api]
+volumes:
+  pgdata:

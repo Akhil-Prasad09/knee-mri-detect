@@ -1,0 +1,11 @@
+data_dir: data/raw/MRNet-v1.0
+labels: [abnormal, acl, meniscus]
+planes: [sagittal, coronal, axial]
+backbone: efficientnet_b3
+img_size: 224
+epochs: 20
+lr: 1.0e-4
+batch_size: 1          # one exam (variable slice count) per step
+num_workers: 2
+out_dir: ml/models
+seed: 42
