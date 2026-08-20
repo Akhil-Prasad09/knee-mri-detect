@@ -171,12 +171,13 @@ function Viewer({ exam, planes }) {
   const [i, setI] = useState(Math.floor(exam.planes[planes[0]] / 2))
   const [heat, setHeat] = useState(null) // label whose Grad-CAM is shown
   const n = exam.planes[plane]
-  const src = `/api/v1/exams/${exam.id}/slice/${plane}/${i}`
+  const v = encodeURIComponent(exam.created_at)   // exam ids restart after a DB reset; keep cached slices per-exam
+  const src = `/api/v1/exams/${exam.id}/slice/${plane}/${i}?v=${v}`
   const meta = exam.gradcam_meta || {}
   const heatLabels = Object.keys(exam.gradcam || {}).filter(l => meta.slices?.[l] != null)
 
   // Warm the cache for the current plane so scrubbing is instant.
-  useEffect(() => { for (let k = 0; k < n; k++) new Image().src = `/api/v1/exams/${exam.id}/slice/${plane}/${k}` }, [exam.id, plane, n])
+  useEffect(() => { for (let k = 0; k < n; k++) new Image().src = `/api/v1/exams/${exam.id}/slice/${plane}/${k}?v=${v}` }, [exam.id, plane, n, v])
 
   // Findings → "show heatmap" events.
   useEffect(() => {
