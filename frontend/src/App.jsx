@@ -5,7 +5,7 @@ const PLANES = ['sagittal', 'coronal', 'axial']
 const NAMES = { abnormal: 'Abnormality', acl: 'ACL tear', meniscus: 'Meniscus tear' }
 const name = l => NAMES[l] || l
 const api = (p = '', o) => fetch('/api/v1/exams' + p, o).then(r => (r.ok ? r.json() : Promise.reject(new Error(`${r.status} ${r.statusText}`))))
-const when = iso => new Date(iso.endsWith('Z') ? iso : iso + 'Z').toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
+const when = (iso, d = 'medium') => new Date(iso.endsWith('Z') ? iso : iso + 'Z').toLocaleString([], { dateStyle: d, timeStyle: 'short' })
 const pct = v => `${(v * 100).toFixed(1)}%`
 
 /** Parse the .npy header client-side so the intake can confirm slices × H × W before upload. */
@@ -57,7 +57,7 @@ function ExamRow({ e, active, onClick }) {
       <span className={`dot ${e.status}`} aria-label={e.status} />
       <span className="row-body">
         <span className="row-title">{e.patient_ref || `Exam #${e.id}`}</span>
-        <span className="row-sub">#{e.id} · {e.planes.length} plane{e.planes.length === 1 ? '' : 's'} · {when(e.created_at)}</span>
+        <span className="row-sub">#{e.id} · {e.planes.length}p · {when(e.created_at, 'short')}</span>
       </span>
       {e.status === 'done' && <span className={`count ${pos ? 'pos' : ''}`}>{pos ? `${pos} flagged` : 'clear'}</span>}
       {e.status === 'pending' && <span className="count">running</span>}
@@ -173,16 +173,18 @@ function Viewer({ exam, planes }) {
   const n = exam.planes[plane]
   const src = `/api/v1/exams/${exam.id}/slice/${plane}/${i}`
   const meta = exam.gradcam_meta || {}
+  const heatLabels = Object.keys(exam.gradcam || {}).filter(l => meta.slices?.[l] != null)
 
   // Warm the cache for the current plane so scrubbing is instant.
   useEffect(() => { for (let k = 0; k < n; k++) new Image().src = `/api/v1/exams/${exam.id}/slice/${plane}/${k}` }, [exam.id, plane, n])
 
   // Findings → "show heatmap" events.
   useEffect(() => {
-    const h = e => { const l = e.detail; if (!exam.gradcam[l]) return; setHeat(l); setPlane(meta.plane); setI(meta.slices[l]) }
+    const h = e => show(e.detail)
     window.addEventListener('show-heatmap', h); return () => window.removeEventListener('show-heatmap', h)
   }, [exam, meta])
 
+  function show(l) { if (!l || !exam.gradcam[l] || meta.slices?.[l] == null) return setHeat(null); setHeat(l); setPlane(meta.plane); setI(meta.slices[l]) }
   function switchPlane(p) { setPlane(p); setI(Math.floor(exam.planes[p] / 2)); setHeat(null) }
 
   return (
@@ -193,7 +195,15 @@ function Viewer({ exam, planes }) {
             <label key={p}><input type="radio" name="plane" checked={plane === p} onChange={() => switchPlane(p)} /><span>{p}</span></label>
           ))}
         </fieldset>
-        <span className="counter"><b>{i + 1}</b> / {n}</span>
+        <div className="toolbar-right">
+          {heatLabels.length > 0 && (
+            <select className="heat" value={heat || ''} onChange={e => show(e.target.value)} aria-label="Grad-CAM heatmap">
+              <option value="">Slices</option>
+              {heatLabels.map(l => <option key={l} value={l}>Heatmap · {name(l)}</option>)}
+            </select>
+          )}
+          <span className="counter"><b>{i + 1}</b> / {n}</span>
+        </div>
       </div>
       <div className="frame">
         <img key={heat ? 'heat' + heat : src} src={heat ? exam.gradcam[heat] : src} alt={heat ? `${name(heat)} Grad-CAM heatmap on ${plane} slice ${i + 1}` : `${plane} slice ${i + 1} of ${n}`} draggable="false" />
@@ -234,7 +244,7 @@ function Findings({ exam }) {
               <div className="f-meta">
                 <span className="num">{pending ? '—' : pct(p)}</span>
                 <span className="muted">threshold {pct(t)}</span>
-                {exam.gradcam?.[l] && <button className="link" onClick={() => window.dispatchEvent(new CustomEvent('show-heatmap', { detail: l }))}>Show heatmap</button>}
+                {exam.gradcam?.[l] && exam.gradcam_meta?.slices?.[l] != null && <button className="link" onClick={() => window.dispatchEvent(new CustomEvent('show-heatmap', { detail: l }))}>Show heatmap</button>}
               </div>
             </li>
           )

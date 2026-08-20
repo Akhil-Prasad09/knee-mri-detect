@@ -8,7 +8,7 @@ STORY: examiner uploads, watches inference finish, reads three verdicts, opens
 the heatmap that justifies each, downloads the report.
 FIRST VIEWPORT: sidebar (brand, New exam, history) · main = intake with three
 plane wells, or exam = viewer left / findings right.
-FORM: pinned by brief (Apple HIG light); no seed roll.
+FORM: pinned by user answer (Apple HIG light); seed roll waived.
 */
 
 :root {
@@ -138,6 +138,8 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 .seg span { display: block; padding: 5px 12px; border-radius: 7px; font-size: 13px; font-weight: 500; text-transform: capitalize; color: var(--label2); transition: color 140ms ease, background-color 140ms ease, box-shadow 140ms ease; }
 .seg input:checked + span { background: var(--surface); color: var(--label); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
 .seg input:focus-visible + span { outline: 3px solid rgba(0, 113, 227, .45); }
+.heat { height: 28px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--sep); background: var(--surface); font: inherit; font-size: 13px; color: var(--label); cursor: pointer; }
+.toolbar-right { display: flex; align-items: center; gap: 10px; }
 .counter { font-size: 13px; color: var(--label2); font-variant-numeric: tabular-nums; }
 .counter b { color: var(--label); font-weight: 600; }
 .frame { position: relative; aspect-ratio: 1; background: #0b0b0c; border-radius: 10px; overflow: hidden; }
@@ -163,7 +165,7 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 .bar { position: relative; height: 8px; border-radius: 4px; background: var(--fill); overflow: visible; }
 .bar i {
   position: absolute; inset: 0; border-radius: 4px; background: var(--label2); transform-origin: left;
-  transform: scaleX(var(--p)); transition: transform 600ms var(--ease) calc(var(--i) * 70ms), background-color 200ms ease;
+  transform: scaleX(var(--p)); transition: transform 400ms var(--ease), background-color 200ms ease;
   @starting-style { transform: scaleX(0); }
 }
 .pos .bar i { background: var(--red); } .neg .bar i { background: var(--green); } .pending .bar i { background: transparent; }
