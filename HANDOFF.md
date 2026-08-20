@@ -3,6 +3,21 @@
 Repo: https://github.com/Akhil-Prasad09/knee-mri-detect (local: Major Project/knee-mri-detect — the repo *is* this directory now)
 Plan: PLAN.md · Product context: PRODUCT.md · Stack: PyTorch + EfficientNet, Grad-CAM, FastAPI, React/Vite, ReportLab, Docker.
 
+## Real-data training (2026-08-20 evening, Colab T4)
+Dataset: Kaggle mirror `cjinny/mrnet-v1` = MRNet v1.0 (1130 train / 120 valid x 3 planes). Also downloaded locally to
+`data/raw/MRNet-v1.0/` (git-ignored) so evaluate.py and the e2e test can run on the laptop.
+EfficientNet-B3, 10 epochs/plane (see docs/COLAB_RUNBOOK.md for why not 20). Best-mean-AUC checkpoint per plane.
+
+| plane | best epoch | abnormal | acl | meniscus | mean |
+|---|---|---|---|---|---|
+| sagittal | 9 | 0.929 | 0.936 | 0.773 | 0.879 |
+| coronal | 2 | 0.907 | 0.926 | 0.853 | 0.895 |
+| axial | running | | | | |
+
+Reference (MRNet paper, 3-plane ensemble): abnormal 0.937, acl 0.965, meniscus 0.847.
+Weights live in Google Drive `MyDrive/knee-mri-detect/models` (+ `models.zip`); `*.pt` and `eval.json` are git-ignored.
+Colab notebook (Drive copy, stable identity): https://colab.research.google.com/drive/1cZylO7shWCSbwjKxwkEGd77GPazZm8JC
+
 ## State (2026-08-20)
 - All three original commits pushed (scaffold, synthetic e2e, evaluate/thresholds/EDA).
 - API: `GET /api/v1/exams` (history, per-exam `flagged` count using tuned thresholds), `planes` slice counts on exam detail,
