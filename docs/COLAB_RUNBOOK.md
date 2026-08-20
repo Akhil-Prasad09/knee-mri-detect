@@ -6,6 +6,14 @@ Written 2026-08-20 for the next session. Read HANDOFF.md first for repo state.
 - The repo was private, so the Colab VM could not clone it → made public with the user's explicit consent.
   Cell 1 now asserts the clone worked instead of failing silently.
 - The Kaggle secret was pasted with a trailing newline → `Invalid header value`. Cell 3 `.strip()`s it.
+- Colab's websocket drops repeatedly; execution on the VM continues but control commands do not land. Do NOT
+  reload a GitHub-loaded notebook to fix it — the reload gives the notebook a new identity and orphans the
+  running session (which keeps holding the only free GPU). **Use File > Save a copy in Drive BEFORE running**,
+  so the notebook has a stable identity and reloads reattach.
+- Interrupting cell 4 only kills the current `!python` subprocess; the Python `for` loop moves on to the next
+  plane. To stop the whole run, interrupt twice or restart the session.
+- A plane interrupted after epoch 0 still leaves a `.pt` on Drive, and the skip-if-exists check then treats it
+  as finished. `FRESH = True` in cell 4 wipes the models dir for a clean run.
 
 ## Why this path
 - Local training was tried: EfficientNet-B3 swaps on 16 GB unified memory (1 s → 35 s/step); B0 fits but
