@@ -2,6 +2,11 @@
 
 Written 2026-08-20 for the next session. Read HANDOFF.md first for repo state.
 
+## Known gotchas (hit on 2026-08-20 run)
+- The repo was private, so the Colab VM could not clone it → made public with the user's explicit consent.
+  Cell 1 now asserts the clone worked instead of failing silently.
+- The Kaggle secret was pasted with a trailing newline → `Invalid header value`. Cell 3 `.strip()`s it.
+
 ## Why this path
 - Local training was tried: EfficientNet-B3 swaps on 16 GB unified memory (1 s → 35 s/step); B0 fits but
   pegs the laptop for ~6 h. Decision: train on Colab, keep the laptop for serving.
@@ -33,7 +38,9 @@ Written 2026-08-20 for the next session. Read HANDOFF.md first for repo state.
 4. Run cell 1 (clone + pip + `nvidia-smi -L`). Expect a Tesla T4 line. pip takes ~2 min.
 5. Run cell 2 (Drive mount). A Google OAuth popup appears → **user clicks through**. Expect `Mounted at /content/drive`.
 6. Run cell 3 (Kaggle download, ~3–5 min at Colab bandwidth). Expect `1130`.
-   - `401`/`403` → secrets wrong; ask user to fix, re-run cell 3 only.
+   - `401`/`403` → secret wrong; ask user to fix, re-run cell 3 only.
+   - `ValueError: Invalid header value b'Bearer ...\r\n'` → the secret value has a trailing newline. The cell
+     already `.strip()`s it; if an older notebook copy is loaded in the browser, edit the cell to add `.strip()`.
 
 ### Phase B — train (≈2.5–3 h, mostly waiting)
 7. Run cell 4. Per plane: 20 epochs, each prints `[plane] epoch N train … val … auc {…}`.
