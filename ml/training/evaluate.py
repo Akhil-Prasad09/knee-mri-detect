@@ -32,7 +32,7 @@ def metrics(y, p):
 
 
 def main(cfg):
-    device = "cuda" if torch.cuda.is_available() else "cpu"; out, per_plane = {}, {}
+    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"; out, per_plane = {}, {}
     for plane in cfg["planes"]:
         y, p = plane_probs(cfg, plane, device)
         if p is None:

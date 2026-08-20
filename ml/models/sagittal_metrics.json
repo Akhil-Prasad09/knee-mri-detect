@@ -1,9 +1,0 @@
-{
-  "plane": "sagittal",
-  "auc": {
-    "abnormal": 1.0,
-    "acl": 0.0,
-    "meniscus": 1.0
-  },
-  "epoch": 1
-}

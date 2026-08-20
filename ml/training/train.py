@@ -22,7 +22,7 @@ def run_epoch(model, loader, crit, opt, device, train):
 
 
 def main(cfg, plane):
-    torch.manual_seed(cfg["seed"]); device = "cuda" if torch.cuda.is_available() else "cpu"
+    torch.manual_seed(cfg["seed"]); device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
     tr = MRNetDataset(cfg["data_dir"], "train", plane, cfg["labels"], cfg["img_size"], train=True)
     va = MRNetDataset(cfg["data_dir"], "valid", plane, cfg["labels"], cfg["img_size"])
     pos = torch.tensor([(tr.df[l] == 0).sum() / max((tr.df[l] == 1).sum(), 1) for l in cfg["labels"]], dtype=torch.float32)

@@ -20,7 +20,9 @@ Training (Colab or local GPU):
 python -m ml.training.train --config ml/training/config.yaml
 ```
 
-Place the MRNet dataset under `data/raw/MRNet-v1.0/` (request access from Stanford AIMI).
+MRNet dataset under `data/raw/MRNet-v1.0/` — official: Stanford AIMI (gated); mirror: `kaggle datasets download cjinny/mrnet-v1 -p data/raw --unzip`.
+
+Training auto-selects CUDA → MPS (Apple) → CPU. `config.yaml` defaults to EfficientNet-B0 / 5 epochs so it fits a 16 GB laptop (~25 min/epoch/plane on M-series); on a CUDA GPU set `backbone: efficientnet_b3`, `epochs: 20`.
 
 > Research / decision-support use only. Not a medical device.
 
