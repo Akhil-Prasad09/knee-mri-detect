@@ -12,11 +12,28 @@ EfficientNet-B3, 10 epochs/plane (see docs/COLAB_RUNBOOK.md for why not 20). Bes
 |---|---|---|---|---|---|
 | sagittal | 9 | 0.929 | 0.936 | 0.773 | 0.879 |
 | coronal | 2 | 0.907 | 0.926 | 0.853 | 0.895 |
-| axial | running | | | | |
+| axial | 2 (only 3/10 epochs ran) | 0.878 | 0.880 | 0.798 | 0.852 |
+
+Axial is UNDERTRAINED: Colab reclaimed the VM mid-run ("disconnected due to inactivity or reaching its maximum
+duration") and the free GPU quota was then exhausted. Its AUC was still climbing steeply (0.727 -> 0.788 -> 0.852).
 
 Reference (MRNet paper, 3-plane ensemble): abnormal 0.937, acl 0.965, meniscus 0.847.
 Weights live in Google Drive `MyDrive/knee-mri-detect/models` (+ `models.zip`); `*.pt` and `eval.json` are git-ignored.
 Colab notebook (Drive copy, stable identity): https://colab.research.google.com/drive/1cZylO7shWCSbwjKxwkEGd77GPazZm8JC
+
+### Finish axial (~90 min, unattended once started)
+Free GPU quota resets roughly 24 h after it was hit (2026-08-21 ~01:00). Then:
+1. Open the Drive notebook (link below). Runtime -> Change runtime type -> T4 GPU.
+2. Delete `axial.pt` and `axial_metrics.json` from `MyDrive/knee-mri-detect/models` (else cell 4 skips axial).
+3. In cell 4 set `FRESH = False` (keeps sagittal/coronal, retrains only axial).
+4. Run all. Click the Drive permission prompt PROMPTLY — it times out and fails with `ValueError: mount failed`.
+5. Cell 5 writes eval.json (ensemble + tuned thresholds), cell 6 writes models.zip.
+
+### Getting the weights to the laptop
+The files already live in Drive at `MyDrive/knee-mri-detect/models/`. Simplest route needs no Colab: open
+drive.google.com, right-click that folder, Download (Drive zips it), then `unzip -o ~/Downloads/<file>.zip -d ml/models/`.
+Then locally: `pytest -q`, and `python -m ml.training.evaluate --config ml/training/config.yaml` (the real MRNet data
+is already in data/raw/, so evaluation and the ensemble thresholds can be produced on the laptop, no GPU needed).
 
 ## State (2026-08-20)
 - All three original commits pushed (scaffold, synthetic e2e, evaluate/thresholds/EDA).
