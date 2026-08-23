@@ -17,7 +17,20 @@ EfficientNet-B3, 10 epochs/plane (see docs/COLAB_RUNBOOK.md for why not 20). Bes
 Axial is UNDERTRAINED: Colab reclaimed the VM mid-run ("disconnected due to inactivity or reaching its maximum
 duration") and the free GPU quota was then exhausted. Its AUC was still climbing steeply (0.727 -> 0.788 -> 0.852).
 
-Reference (MRNet paper, 3-plane ensemble): abnormal 0.937, acl 0.965, meniscus 0.847.
+### Ensemble on the MRNet valid split (evaluate.py, run locally 2026-08-23)
+| label | AUC | threshold | sensitivity | specificity |
+|---|---|---|---|---|
+| abnormal | 0.929 | 0.361 | 0.979 | 0.600 |
+| acl | 0.949 | 0.380 | 0.963 | 0.833 |
+| meniscus | 0.840 | 0.747 | 0.788 | 0.824 |
+
+Reference (MRNet paper, 3-plane ensemble): abnormal 0.937, acl 0.965, meniscus 0.847 — we are within
+0.008 / 0.016 / 0.007 of it, with axial still only 3 epochs.
+
+Weights are now on the laptop in `ml/models/` (git-ignored), pulled with
+`gdown --folder <shared Drive folder> -O ml/models`. Full suite passes with the real model (`pytest -q` -> 4 passed).
+Verified on valid exam 1172 (ground truth abnormal=1, acl=1, meniscus=1): predicted abnormal 87.4% POSITIVE,
+acl 54.4% POSITIVE, meniscus 70.3% negative (below its 74.7% threshold) — 2 of 3 correct, meniscus a false negative.
 Weights live in Google Drive `MyDrive/knee-mri-detect/models` (+ `models.zip`); `*.pt` and `eval.json` are git-ignored.
 Colab notebook (Drive copy, stable identity): https://colab.research.google.com/drive/1cZylO7shWCSbwjKxwkEGd77GPazZm8JC
 
