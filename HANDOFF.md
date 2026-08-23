@@ -55,7 +55,12 @@ is already in data/raw/, so evaluation and the ensemble thresholds can be produc
   `GET /api/v1/exams/{id}/slice/{plane}/{i}` PNG, `gradcam_meta` = plane + best slice per label.
 - Frontend redesigned (Apple HIG light): sidebar history, intake with client-side .npy shape preview, slice viewer
   (native range + radio segmented control), findings with threshold ticks, Grad-CAM jump-to-slice, PDF download.
-- Docker: nginx proxies /api → api; psycopg2-binary added; `TRAIN_CONFIG` env passthrough. `docker compose config` validates; full `up --build` not run yet.
+- Docker: VERIFIED with a real `docker compose up --build` (2026-08-23). All three services healthy; frontend served by
+  nginx on :5173, /api proxied to the api container, Postgres connected, weights bind-mounted at /models, thresholds
+  read from eval.json. Full exam upload → inference → Grad-CAM → PDF exercised through nginx; predictions identical
+  to the local run. Found and fixed a Docker-only bug: `grad-cam>=1.5` is unpinned, and 1.5.6+ made `targets` a
+  required argument to `cam(...)`, so Grad-CAM silently failed inside the container (caught by the best-effort
+  try/except). ml/explain/gradcam.py now passes `targets=[ClassifierOutputTarget(0)]`, which works on 1.5.5 and 1.5.7.
 
 ## Verified
 - `TRAIN_CONFIG=ml/training/smoke.yaml pytest -q` → 4 passed (after `python scripts/make_fake_mrnet.py` + smoke train).
@@ -70,6 +75,6 @@ is already in data/raw/, so evaluation and the ensemble thresholds can be produc
 ## Next
 1. **Train on Colab — follow docs/COLAB_RUNBOOK.md step by step** (notebook: notebooks/train_colab.ipynb). MRNet is already
    downloaded locally (Kaggle mirror cjinny/mrnet-v1) for local evaluate/tests; local training was abandoned (16 GB laptop swaps).
-2. `docker compose up --build` end-to-end once on a machine with disk for the torch image.
-3. DICOM ingestion (pydicom) if non-MRNet data arrives.
+3. DICOM ingestion (pydicom) if non-MRNet data arrives — the app currently only accepts MRNet-style .npy stacks,
+   so anyone without the dataset cannot try it themselves.
 4. Optional: Impeccable v4.1.1 is available (`npx impeccable update`).
