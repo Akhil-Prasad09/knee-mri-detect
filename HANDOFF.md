@@ -19,9 +19,20 @@ All three planes are now trained for the full 10 epochs.
 ### Ensemble on the MRNet valid split (evaluate.py, run locally 2026-08-23)
 | label | AUC | threshold | sensitivity | specificity |
 |---|---|---|---|---|
-| abnormal | **0.943** | 0.463 | 0.937 | 0.840 |
-| acl | **0.960** | 0.465 | 0.963 | 0.864 |
-| meniscus | **0.847** | 0.792 | 0.808 | 0.779 |
+| label | AUC | threshold | sens (in-sample) | sens (CV) | spec (in-sample) | spec (CV) |
+|---|---|---|---|---|---|---|
+| abnormal | **0.943** | 0.463 | 0.979 | **0.937** | 0.680 | **0.680** |
+| acl | **0.960** | 0.465 | 0.963 | **0.945** | 0.864 | **0.863** |
+| meniscus | **0.847** | 0.792 | 0.808 | **0.813** | 0.779 | **0.681** |
+
+QUOTE THE CV COLUMNS in the report/viva. Thresholds are chosen by best-F1 over all 120 valid exams (the API needs
+one operating point), so scoring at that same threshold on those same exams is optimistically biased. `metrics()`
+in evaluate.py therefore also reports a 5-fold estimate: threshold picked on 4/5, scored on the held-out 1/5.
+The optimism is small for abnormal/acl but real for meniscus specificity (0.779 -> 0.681, a 10-point drop).
+
+Also note: the best-F1 threshold is unstable. The same weights evaluated on Colab (CUDA) and locally (MPS) picked
+0.568 vs 0.463 for `abnormal` because the F1 curve is flat near its peak — another reason to trust AUC and the CV
+figures over any single in-sample operating point.
 
 Reference (MRNet paper, 3-plane ensemble): abnormal 0.937, acl 0.965, meniscus 0.847.
 We exceed the paper on abnormal, match it on meniscus, and sit 0.005 below on ACL. Mean 0.917 vs their 0.916.
