@@ -86,6 +86,8 @@ is already in data/raw/, so evaluation and the ensemble thresholds can be produc
 ## Next
 1. **Train on Colab — follow docs/COLAB_RUNBOOK.md step by step** (notebook: notebooks/train_colab.ipynb). MRNet is already
    downloaded locally (Kaggle mirror cjinny/mrnet-v1) for local evaluate/tests; local training was abandoned (16 GB laptop swaps).
-3. DICOM ingestion (pydicom) if non-MRNet data arrives — the app currently only accepts MRNet-style .npy stacks,
+3. Demo samples: samples/<case>/ holds 5 MRNet valid exams covering every label combo (1130 normal, 1154 abnormal-only,
+   1175 acl, 1221 meniscus, 1173 both). All 5 predict 3/3 correct. git-ignored; shipped via deploy script.
+4. DICOM ingestion (pydicom) if non-MRNet data arrives — the app currently only accepts MRNet-style .npy stacks,
    so anyone without the dataset cannot try it themselves.
 4. Optional: Impeccable v4.1.1 is available (`npx impeccable update`).
