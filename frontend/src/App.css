@@ -116,6 +116,8 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 .drop-meta { font-size: 13px; font-variant-numeric: tabular-nums; }
 .filled .drop-meta { color: var(--label2); }
 .actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.demos { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-radius: var(--r); background: var(--fill); }
+.demos .btn { background: var(--surface); text-transform: capitalize; }
 
 /* ---------- exam ---------- */
 .exam { display: flex; flex-direction: column; gap: 22px; }

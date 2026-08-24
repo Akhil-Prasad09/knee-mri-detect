@@ -71,6 +71,14 @@ function Intake({ onCreated }) {
   const [files, setFiles] = useState({})       // plane -> {file, shape}
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [demos, setDemos] = useState([])
+  useEffect(() => { fetch('/api/v1/samples').then(r => r.json()).then(setDemos).catch(() => {}) }, [])
+
+  async function runSample(id) {
+    setBusy(true); setError('')
+    try { onCreated((await (await fetch(`/api/v1/samples/${id}`, { method: 'POST' })).json()).id) }
+    catch (err) { setError(`Could not start the sample (${err.message}).`); setBusy(false) }
+  }
   const n = Object.keys(files).length
 
   async function pick(plane, file) {
@@ -118,6 +126,16 @@ function Intake({ onCreated }) {
           )
         })}
       </div>
+      {demos.length > 0 && (
+        <div className="demos">
+          <span className="muted">No MRNet files? Try a bundled case:</span>
+          {demos.map(d => (
+            <button key={d.id} type="button" className="btn" disabled={busy} onClick={() => runSample(d.id)}>
+              {d.id.replace(/_/g, ' ')} · {d.planes.length} plane{d.planes.length === 1 ? '' : 's'}
+            </button>
+          ))}
+        </div>
+      )}
       {error && <p className="error" role="alert">{error}</p>}
       <div className="actions">
         <button className="btn primary" disabled={!n || busy}>{busy ? 'Uploading…' : n ? `Analyse ${n} plane${n === 1 ? '' : 's'}` : 'Analyse'}</button>

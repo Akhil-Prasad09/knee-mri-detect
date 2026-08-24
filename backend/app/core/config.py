@@ -7,6 +7,7 @@ BACKBONE = _cfg["backbone"]
 PLANES = ["sagittal", "coronal", "axial"]
 MODEL_DIR = os.getenv("MODEL_DIR", "ml/models")
 STORAGE_DIR = os.getenv("STORAGE_DIR", "storage")
+SAMPLES_DIR = os.getenv("SAMPLES_DIR", "samples")   # bundled demo exams: samples/<id>/<plane>.npy
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./knee.db")
 import json
 _ev = Path(MODEL_DIR) / "eval.json"

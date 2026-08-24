@@ -4,7 +4,8 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Background
 from fastapi.responses import FileResponse, Response
 import cv2
 from ..core.db import SessionLocal, Exam
-from ..core.config import STORAGE_DIR, PLANES, LABELS, THRESHOLDS
+from ..core.config import STORAGE_DIR, SAMPLES_DIR, PLANES, LABELS, THRESHOLDS
+import shutil
 from ..services.inference import predict, get_model
 from ..services.report import build_report
 
@@ -99,3 +100,32 @@ def get_report(exam_id: int):
     if not exam or not exam.report_path:
         raise HTTPException(404)
     return FileResponse(exam.report_path, media_type="application/pdf", filename=f"exam_{exam_id}_report.pdf")
+
+
+samples = APIRouter(prefix="/api/v1/samples", tags=["samples"])
+
+
+def _sample_planes(sid: str) -> dict[str, Path]:
+    d = Path(SAMPLES_DIR) / sid
+    return {p: d / f"{p}.npy" for p in PLANES if (d / f"{p}.npy").exists()}
+
+
+@samples.get("")
+def list_samples():
+    root = Path(SAMPLES_DIR)
+    if not root.is_dir():
+        return []
+    return [{"id": d.name, "planes": list(_sample_planes(d.name))} for d in sorted(root.iterdir()) if d.is_dir() and _sample_planes(d.name)]
+
+
+@samples.post("/{sid}")
+def analyse_sample(sid: str, bg: BackgroundTasks):
+    files = _sample_planes(sid)
+    if not files or "/" in sid or ".." in sid:
+        raise HTTPException(404)
+    db = SessionLocal(); exam = Exam(patient_ref=f"Sample · {sid.replace('_', ' ')}"); db.add(exam); db.commit(); db.refresh(exam)
+    d = Path(STORAGE_DIR) / str(exam.id); d.mkdir(parents=True, exist_ok=True)
+    for p, f in files.items():
+        shutil.copy(f, d / f"{p}.npy")
+    bg.add_task(run_inference, exam.id)
+    return {"id": exam.id, "status": exam.status}
