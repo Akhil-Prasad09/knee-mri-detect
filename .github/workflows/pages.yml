@@ -3,7 +3,7 @@ name: Deploy demo to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: [web/**, .github/workflows/pages.yml]
+    paths: [web/**, frontend/**, .github/workflows/pages.yml]
   workflow_dispatch:
 
 permissions:
@@ -23,8 +23,15 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      # The same React dashboard as the FastAPI app, built in static mode: src/browser.js runs
+      # the exported ONNX models in the page instead of calling the API.
+      - run: npm ci && VITE_STATIC=1 npx vite build --base=./ --outDir ../site
+        working-directory: frontend
+      - run: cp -r web/models web/config.json site/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4

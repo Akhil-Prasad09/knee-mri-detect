@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
+import * as browser from './browser.js'
 
 const PLANES = ['sagittal', 'coronal', 'axial']
 const NAMES = { abnormal: 'Abnormality', acl: 'ACL tear', meniscus: 'Meniscus tear' }
 const name = l => NAMES[l] || l
-const api = (p = '', o) => fetch('/api/v1/exams' + p, o).then(r => (r.ok ? r.json() : Promise.reject(new Error(`${r.status} ${r.statusText}`))))
+// The GitHub Pages build has no server: browser.js runs the models in the page instead.
+const STATIC = import.meta.env.VITE_STATIC === '1'
+const api = STATIC ? browser.api : (p = '', o) => fetch('/api/v1/exams' + p, o).then(r => (r.ok ? r.json() : Promise.reject(new Error(`${r.status} ${r.statusText}`))))
+const sliceSrc = (exam, plane, i) => STATIC ? browser.sliceSrc(exam.id, plane, i) : `/api/v1/exams/${exam.id}/slice/${plane}/${i}?v=${encodeURIComponent(exam.created_at)}`
 const when = (iso, d = 'medium') => new Date(iso.endsWith('Z') ? iso : iso + 'Z').toLocaleString([], { dateStyle: d, timeStyle: 'short' })
 const pct = v => `${(v * 100).toFixed(1)}%`
 
@@ -39,7 +43,7 @@ export default function App() {
           {exams.length === 0 && <p className="muted">Analysed exams will appear here.</p>}
           {exams.map(e => <ExamRow key={e.id} e={e} active={e.id === current} onClick={() => setCurrent(e.id)} />)}
         </nav>
-        <p className="disclaimer">Research prototype. Decision support only — not a medical device.</p>
+        <p className="disclaimer">Research prototype. Decision support only, not a medical device.</p>
       </aside>
       <main className="main">
         {current === null
@@ -69,10 +73,11 @@ function ExamRow({ e, active, onClick }) {
 function Intake({ onCreated }) {
   const [patient, setPatient] = useState('')
   const [files, setFiles] = useState({})       // plane -> {file, shape}
+  const [drag, setDrag] = useState(null)       // plane currently dragged over
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [demos, setDemos] = useState([])
-  useEffect(() => { fetch('/api/v1/samples').then(r => r.json()).then(setDemos).catch(() => {}) }, [])
+  useEffect(() => { if (STATIC) return; fetch('/api/v1/samples').then(r => r.json()).then(setDemos).catch(() => {}) }, [])
 
   async function runSample(id) {
     setBusy(true); setError('')
@@ -93,13 +98,13 @@ function Intake({ onCreated }) {
     const fd = new FormData(); fd.append('patient_ref', patient.trim())
     PLANES.forEach(p => files[p] && fd.append(p, files[p].file))
     try { onCreated((await api('', { method: 'POST', body: fd })).id) }
-    catch (err) { setError(`Upload failed (${err.message}). Check the API is running on :8000.`); setBusy(false) }
+    catch (err) { setError(STATIC ? `Could not read the files (${err.message}).` : `Upload failed (${err.message}). Check the API is running on :8000.`); setBusy(false) }
   }
 
   return (
     <form className="intake" onSubmit={submit}>
       <h1>New exam</h1>
-      <p className="lede">Upload one or more planes as MRNet-style <code>.npy</code> stacks (slices × H × W). The model ensembles whatever planes you provide.</p>
+      <p className="lede">Upload one or more planes as MRNet-style <code>.npy</code> stacks (slices × H × W). The model ensembles whatever planes you provide.{STATIC && ' Everything runs in this browser tab: nothing is uploaded, and exams are cleared when you reload.'}</p>
       <label className="field">
         <span>Patient reference <em>optional</em></span>
         <input value={patient} onChange={e => setPatient(e.target.value)} placeholder="e.g. MRN-0042" autoComplete="off" />
@@ -108,7 +113,10 @@ function Intake({ onCreated }) {
         {PLANES.map(p => {
           const f = files[p]
           return (
-            <label key={p} className={`drop ${f ? 'filled' : ''}`}>
+            <label key={p} className={`drop ${f ? 'filled' : ''} ${drag === p ? 'drag' : ''}`}
+              onDragOver={e => { e.preventDefault(); setDrag(p) }}
+              onDragLeave={() => setDrag(d => (d === p ? null : d))}
+              onDrop={e => { e.preventDefault(); setDrag(null); pick(p, e.dataTransfer.files[0]) }}>
               <input type="file" accept=".npy" onChange={e => pick(p, e.target.files[0])} />
               <span className="drop-plane">{p}</span>
               {f ? (
@@ -119,7 +127,7 @@ function Intake({ onCreated }) {
               ) : (
                 <>
                   <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><path d="M11 15V4m0 0L6.5 8.5M11 4l4.5 4.5M4 14v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  <span className="drop-meta">Choose .npy</span>
+                  <span className="drop-meta">Drop or choose .npy</span>
                 </>
               )}
             </label>
@@ -189,13 +197,29 @@ function Viewer({ exam, planes }) {
   const [i, setI] = useState(Math.floor(exam.planes[planes[0]] / 2))
   const [heat, setHeat] = useState(null) // label whose Grad-CAM is shown
   const n = exam.planes[plane]
-  const v = encodeURIComponent(exam.created_at)   // exam ids restart after a DB reset; keep cached slices per-exam
-  const src = `/api/v1/exams/${exam.id}/slice/${plane}/${i}?v=${v}`
+  const src = sliceSrc(exam, plane, i)   // server URLs carry created_at: exam ids restart after a DB reset
   const meta = exam.gradcam_meta || {}
   const heatLabels = Object.keys(exam.gradcam || {}).filter(l => meta.slices?.[l] != null)
 
   // Warm the cache for the current plane so scrubbing is instant.
-  useEffect(() => { for (let k = 0; k < n; k++) new Image().src = `/api/v1/exams/${exam.id}/slice/${plane}/${k}?v=${v}` }, [exam.id, plane, n, v])
+  useEffect(() => { for (let k = 0; k < n; k++) new Image().src = sliceSrc(exam, plane, k) }, [exam.id, plane, n])
+
+  // Scroll over the image to scrub slices, like a PACS viewer. React registers
+  // wheel listeners passively, so attach directly to preventDefault page scroll.
+  const frameRef = useRef(null)
+  useEffect(() => {
+    const el = frameRef.current
+    if (!el) return
+    const onWheel = e => {
+      const d = Math.sign(e.deltaY)
+      if (!d) return
+      e.preventDefault()
+      setHeat(null)
+      setI(prev => Math.min(n - 1, Math.max(0, prev + d)))
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [n])
 
   // Findings → "show heatmap" events.
   useEffect(() => {
@@ -224,7 +248,7 @@ function Viewer({ exam, planes }) {
           <span className="counter"><b>{i + 1}</b> / {n}</span>
         </div>
       </div>
-      <div className="frame">
+      <div className="frame" ref={frameRef} title="Scroll to scrub slices">
         <img key={heat ? 'heat' + heat : src} src={heat ? exam.gradcam[heat] : src} alt={heat ? `${name(heat)} Grad-CAM heatmap on ${plane} slice ${i + 1}` : `${plane} slice ${i + 1} of ${n}`} draggable="false" />
         {heat && <span className="chip">Grad-CAM · {name(heat)} · slice {i + 1}<button onClick={() => setHeat(null)} aria-label="Hide heatmap">×</button></span>}
       </div>
@@ -237,7 +261,7 @@ function Findings({ exam }) {
   const labels = Object.keys(exam.thresholds)
   if (exam.status === 'error') return (
     <section className="card findings"><h2>Findings</h2>
-      <p className="error" role="alert">Inference failed: {exam.predictions?.error || 'unknown error'}. Check the stack shape is (slices, H, W) and model weights exist in MODEL_DIR.</p>
+      <p className="error" role="alert">Inference failed: {exam.predictions?.error || 'unknown error'}. Check the stack shape is (slices, H, W){STATIC ? '.' : ' and model weights exist in MODEL_DIR.'}</p>
     </section>
   )
   const pending = exam.status === 'pending'
@@ -246,7 +270,7 @@ function Findings({ exam }) {
     <section className="card findings" aria-busy={pending}>
       <div className="findings-head">
         <h2>Findings</h2>
-        {pending ? <span className="muted">Running the model across {Object.keys(exam.planes).length} plane{Object.keys(exam.planes).length === 1 ? '' : 's'}…</span>
+        {pending ? <span className="muted">{exam.progress || `Running the model across ${Object.keys(exam.planes).length} plane${Object.keys(exam.planes).length === 1 ? '' : 's'}…`}</span>
           : <span className={`summary ${flagged.length ? 'pos' : 'neg'}`}>{flagged.length ? `${flagged.length} of ${labels.length} flagged` : 'No findings above threshold'}</span>}
       </div>
       {pending && <div className="indeterminate" aria-hidden="true" />}
@@ -261,7 +285,7 @@ function Findings({ exam }) {
                 <i style={{ '--p': pending ? 0 : p }} /><b style={{ '--t': t }} title={`threshold ${pct(t)}`} />
               </div>
               <div className="f-meta">
-                <span className="num">{pending ? '—' : pct(p)}</span>
+                <span className="num">{pending ? '' : pct(p)}</span>
                 <span className="muted">threshold {pct(t)}</span>
                 {exam.gradcam?.[l] && exam.gradcam_meta?.slices?.[l] != null && <button className="link" onClick={() => window.dispatchEvent(new CustomEvent('show-heatmap', { detail: l }))}>Show heatmap</button>}
               </div>
@@ -271,9 +295,9 @@ function Findings({ exam }) {
       </ol>
       {exam.status === 'done' && (
         <footer className="findings-foot">
-          <a className="btn" href={`/api/v1/exams/${exam.id}/report`} download>
+          {!STATIC && <a className="btn" href={`/api/v1/exams/${exam.id}/report`} download>
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M7 1v8m0 0L3.5 5.5M7 9l3.5-3.5M1.5 10.5v1a1.5 1.5 0 0 0 1.5 1.5h8a1.5 1.5 0 0 0 1.5-1.5v-1" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>Download PDF report
-          </a>
+          </a>}
           <span className="muted">Probabilities are ensembled across uploaded planes; thresholds were tuned on the validation split.</span>
         </footer>
       )}

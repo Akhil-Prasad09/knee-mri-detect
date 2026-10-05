@@ -15,14 +15,19 @@ FORM: pinned by user answer (Apple HIG light); seed roll waived.
   --bg: #f5f5f7; --surface: #fff; --label: #1d1d1f; --label2: #6e6e73;
   --sep: rgba(0, 0, 0, .08); --fill: rgba(120, 120, 128, .12); --fill2: rgba(120, 120, 128, .2);
   --blue: #0071e3; --blue-hover: #0077ed; --red: #d70015; --red-soft: #fff1f0; --green: #1f7a36; --green-soft: #eefaf0;
-  --shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 10px 30px -14px rgba(0, 0, 0, .14);
+  --shadow: 0 1px 2px rgba(20, 40, 80, .05), 0 10px 30px -14px rgba(20, 40, 80, .16);
   --r: 14px; --ease: cubic-bezier(.23, 1, .32, 1);
   color-scheme: light;
 }
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; min-height: 100%; }
 body {
-  background: var(--bg); color: var(--label);
+  background:
+    radial-gradient(1000px 600px at 88% -10%, rgba(0, 113, 227, .06), transparent 60%),
+    radial-gradient(800px 500px at -8% 108%, rgba(0, 113, 227, .045), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--label);
   font: 15px/1.47 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased; letter-spacing: -.01em;
 }
@@ -33,6 +38,14 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 .muted { color: var(--label2); font-size: 13px; }
 .error { color: var(--red); background: var(--red-soft); border-radius: 10px; padding: 10px 14px; font-size: 14px; }
 :focus-visible { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
+
+/* ---------- entry motion ---------- */
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+.intake, .exam, .row { animation: rise 480ms var(--ease) backwards; }
+.finding { animation: rise 480ms var(--ease) backwards; animation-delay: calc(var(--i) * 70ms); }
+.drop { animation: rise 480ms var(--ease) backwards; }
+.drop:nth-child(2) { animation-delay: 60ms; }
+.drop:nth-child(3) { animation-delay: 120ms; }
 
 /* ---------- shell ---------- */
 .app { display: grid; grid-template-columns: 296px minmax(0, 1fr); min-height: 100vh; }
@@ -108,6 +121,7 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 .drop:hover { border-color: var(--blue); color: var(--blue); }
 .drop:active { transform: scale(.985); }
 .drop:has(:focus-visible) { outline: 3px solid rgba(0, 113, 227, .45); outline-offset: 2px; }
+.drop.drag { border-color: var(--blue); border-style: solid; color: var(--blue); background: rgba(0, 113, 227, .06); transform: scale(1.02); }
 .drop.filled { border: 1px solid var(--sep); box-shadow: var(--shadow); color: var(--label); }
 .drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .drop svg { margin-bottom: auto; }
@@ -144,7 +158,7 @@ code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; background: va
 .toolbar-right { display: flex; align-items: center; gap: 10px; }
 .counter { font-size: 13px; color: var(--label2); font-variant-numeric: tabular-nums; }
 .counter b { color: var(--label); font-weight: 600; }
-.frame { position: relative; aspect-ratio: 1; background: #0b0b0c; border-radius: 10px; overflow: hidden; }
+.frame { position: relative; aspect-ratio: 1; background: #0b0b0c; border-radius: 10px; overflow: hidden; cursor: ns-resize; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
 .frame img { width: 100%; height: 100%; object-fit: contain; display: block; user-select: none; }
 .chip { position: absolute; left: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; color: #fff; background: rgba(20, 20, 22, .72); backdrop-filter: blur(12px); }
 .chip button { border: 0; background: rgba(255, 255, 255, .18); color: #fff; width: 18px; height: 18px; border-radius: 50%; font-size: 13px; line-height: 1; cursor: pointer; }
