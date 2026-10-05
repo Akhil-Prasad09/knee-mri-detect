@@ -1,0 +1,39 @@
+{
+ "labels": [
+  "abnormal",
+  "acl",
+  "meniscus"
+ ],
+ "planes": [
+  "sagittal",
+  "coronal",
+  "axial"
+ ],
+ "thresholds": {
+  "abnormal": 0.4632,
+  "acl": 0.4646,
+  "meniscus": 0.7915
+ },
+ "auc": {
+  "sagittal": {
+   "abnormal": 0.928,
+   "acl": 0.936,
+   "meniscus": 0.774
+  },
+  "coronal": {
+   "abnormal": 0.907,
+   "acl": 0.926,
+   "meniscus": 0.852
+  },
+  "axial": {
+   "abnormal": 0.892,
+   "acl": 0.923,
+   "meniscus": 0.76
+  },
+  "ensemble": {
+   "abnormal": 0.943,
+   "acl": 0.96,
+   "meniscus": 0.847
+  }
+ }
+}

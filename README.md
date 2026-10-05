@@ -1,6 +1,8 @@
 # knee-mri-detect
 
 Automated Knee MRI Abnormality Detection using Deep Learning for Clinical Decision Support.
+
+**[Live demo](https://akhil-prasad09.github.io/knee-mri-detect/)**: upload your own MRNet-format `.npy` stacks and run the three models with Grad-CAM in your browser. Nothing is uploaded, and no MRNet scans are included because the dataset's license does not allow sharing them. Research demo, not a medical device.
 B.Tech Major Project — see [PLAN.md](PLAN.md) for the full build plan and milestones.
 
 **Stack:** PyTorch + EfficientNet-B3 · Grad-CAM · FastAPI · React (Vite) · SQLite/PostgreSQL · ReportLab · Docker
